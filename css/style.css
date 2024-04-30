@@ -1,0 +1,40 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    user-select: none;
+}
+
+body {
+    margin: 0;
+    display: flex;
+    background-color: hsl(0, 0%, 66%);
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+button {
+    border: none;
+    border-radius: 5px;
+    padding: 5px 5px 7px 5px;
+    margin: 2px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: blue;
+}
+
+.verticalButtons {
+    display: flex;
+    flex-direction: column;
+}
+
+#carCanvas {
+    background: hsl(0, 0%, 83%);
+}
+
+#networkCanvas {
+    background-color: hsl(0, 0%, 0%);
+}
