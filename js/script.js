@@ -14,25 +14,10 @@ networCanvas.height = window.innerHeight
 const carCtx = carCanvas.getContext("2d")
 const networkCtx = networCanvas.getContext("2d")
 
-const N = 1000
-const road = new Road(carCanvas.width / 2, carCanvas.width * 0.9)
+const N = 1
+const road = new Road(carCanvas.width / 2, carCanvas.width * 0.9, 10000)
 const cars = genereateCars(N)
-const traffic = [
-    new Car(road.getLaneCenter(1), -100, 30, 50, "DUMMY", 0.1),
-    new Car(road.getLaneCenter(0), -300, 30, 50, "DUMMY", 0.1),
-    new Car(road.getLaneCenter(2), -300, 30, 50, "DUMMY", 0.1),
-    new Car(road.getLaneCenter(0), -300, 30, 50, "DUMMY", 0.1),
-    new Car(road.getLaneCenter(1), -500, 30, 50, "DUMMY", 0.1),
-    new Car(road.getLaneCenter(2), -500, 30, 50, "DUMMY", 0.1),
-    new Car(road.getLaneCenter(0), -700, 30, 50, "DUMMY", 0.1),
-    new Car(road.getLaneCenter(1), -700, 30, 50, "DUMMY", 0.1),
-    new Car(road.getLaneCenter(1), -1000, 30, 50, "DUMMY", 0.1),
-    new Car(road.getLaneCenter(2), -1000, 30, 50, "DUMMY", 0.1),
-    new Car(road.getLaneCenter(0), -1200, 30, 50, "DUMMY", 0.1),
-    new Car(road.getLaneCenter(2), -1200, 30, 50, "DUMMY", 0.1),
-    new Car(road.getLaneCenter(0), -1400, 30, 50, "DUMMY", 0.1),
-    new Car(road.getLaneCenter(1), -1400, 30, 50, "DUMMY", 0.1),
-]
+let traffic = road.getTraffic(-100, 30, 50, 0.1)
 
 const saveBtn = document.querySelector("[data-save]")
 const discardBtn = document.querySelector("[data-discard]")
@@ -41,9 +26,9 @@ discardBtn.addEventListener("click", discard)
 
 let bestCar = cars[0]
 if (localStorage.getItem("bestBrain")) {
-    for(let i = 0; i < cars.length; i++) {
+    for (let i = 0; i < cars.length; i++) {
         cars[i].brain = JSON.parse(localStorage.getItem("bestBrain"))
-        if(i !== 0) {
+        if (i !== 0) {
             NerualNetwork.mutate(cars[i].brain, 0.1)
         }
     }
@@ -90,21 +75,17 @@ function update(time) {
 
     const delta = time - lastUpdate
 
+    road.update(bestCar, traffic)
+    road.draw(carCtx)
+
     for (let i = 0; i < traffic.length; i++) {
         traffic[i].update(delta, road.boarders, [])
-    }
-
-    for (let i = 0; i < cars.length; i++) {
-        cars[i].update(delta, road.boarders, traffic)
-    }
-
-    for (let i = 0; i < traffic.length; i++) {
         traffic[i].draw(carCtx, "red")
     }
 
     carCtx.globalAlpha = 0.2
-    road.draw(carCtx)
     for (let i = 0; i < cars.length; i++) {
+        cars[i].update(delta, road.boarders, [])
         cars[i].draw(carCtx, "blue")
     }
     carCtx.globalAlpha = 1

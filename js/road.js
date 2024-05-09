@@ -1,24 +1,54 @@
-import { lerp } from "./util.js"
+import { lerp, randomNumberBetween } from "./util.js"
+import Car from "./car.js"
 
 export default class Road {
-    constructor(x, width, laneCount = 3) {
+    constructor(x, width, length, laneCount = 3) {
         this.width = width
         this.laneCount = laneCount
         this.width = width
         this.left = x - width / 2
         this.right = x + width / 2
-        this.top = -5000
-        this.bottom = 5000
-
-        const topLeft = { x: this.left, y: this.top }
-        const topRight = { x: this.right, y: this.top }
-        const bottomLeft = { x: this.left, y: this.bottom }
-        const bottomRight = { x: this.right, y: this.bottom }
+        this.length = length
+        this.top = -length
+        this.bottom = length
 
         this.boarders = [
-            [topLeft, bottomLeft],
-            [topRight, bottomRight]
+            [{ x: this.left, y: this.top }, { x: this.left, y: this.bottom }],
+            [{ x: this.right, y: this.top }, { x: this.right, y: this.bottom }]
         ]
+    }
+
+    getTraffic(startY, carWidth, carLength, maxSpeed) {
+        /*
+            Rules:
+            1. 0 < same lane traffic count < lane count
+            2. minimum gap > 3 * car length
+            3. maximum gap < 5 * car length
+        */
+        const minGap = carLength * 3
+        const maxGap = carLength * 5
+        const laneIndexes = []
+        for (let i = 0; i < this.laneCount; i++) laneIndexes.push(i)
+        const traffic = []
+
+        while (startY > this.top) {
+            // traffic count of one lane
+            const carCount = randomNumberBetween(1, this.laneCount - 1)
+            let tempIndexes = laneIndexes.slice()
+
+            for (let i = 0; i < carCount; i++) {
+                const index = randomNumberBetween(0, tempIndexes.length - 1)
+                traffic.push(
+                    new Car(
+                        this.getLaneCenter(tempIndexes.splice(index, 1)),
+                        startY,
+                        carWidth, carLength, "DUMMY", maxSpeed
+                    )
+                )
+            }
+            startY -= randomNumberBetween(minGap, maxGap)
+        }
+        return traffic
     }
 
     getLaneCenter(laneIndex) {
@@ -33,7 +63,7 @@ export default class Road {
         // Center lines
         for (let i = 1; i < this.laneCount; i++) {
             const x = lerp(this.left, this.right, i / this.laneCount)
-            
+
             ctx.setLineDash([20, 20])
             ctx.beginPath()
             ctx.moveTo(x, this.top)
@@ -51,8 +81,26 @@ export default class Road {
         })
     }
 
-    update(delta) {
+    update(car, traffic) {
+        if (car.y - this.top < this.length / 2) {
+            // New traffic y based on last traffic - 250
+            const oldTop = traffic[traffic.length - 1].y - 250
+            this.top -= this.length / 2
+            this.bottom -= this.length / 2
 
+            this.boarders = [
+                [{ x: this.left, y: this.top }, { x: this.left, y: this.bottom }],
+                [{ x: this.right, y: this.top }, { x: this.right, y: this.bottom }]
+            ]
+
+            const newTraffic = this.getTraffic(oldTop, 30, 50, 0.1)
+
+            // Filter out the cars that are out of the road
+            const filteredTraffic = traffic.filter(c => c.y < this.bottom)
+            traffic.length = 0
+            filteredTraffic.forEach(car => traffic.push(car))
+            traffic.push(...newTraffic)
+        }
     }
 }
 

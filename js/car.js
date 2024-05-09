@@ -23,6 +23,9 @@ export default class Car {
             this.brain = new NerualNetwork([this.sensor.rayCount, 6, 4])
         }
         this.controls = new Controls(controlType)
+
+        this.img = new Image()
+        this.img.src = "../images/car.png"
     }
 
     draw(ctx, color, useSensor = false) {
